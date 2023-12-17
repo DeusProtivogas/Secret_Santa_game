@@ -6,12 +6,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from secret_santa.bot_logic.statesform import StepsForm
 from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
-from secret_santa.models import Game
+from secret_santa.models import Game, Givers
 
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from secret_santa.gifting import perform_pairing
-
+# from default_handlers.start import perform_pairing
 
 NAME_GAME = None
 PRICE = None
@@ -122,15 +122,19 @@ async def process_simple_calendar(callback_query: types.CallbackQuery, callback_
                                             f"<u>Период регистрации</u> с {data_now} по {END_OF_REGISTRATION}\n"
                                             f"<u>Дата отправки подарка</u> - {departure_date}")
 
-        print("Before scheduler")
         schebuler = AsyncIOScheduler()
-        schebuler.add_job(perform_pairing, trigger="date",
-                          # next_run_time=datetime.datetime.strptime( END_OF_REGISTRATION, '%d.%m.%Y' ),
-                          next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=60),
-                          kwargs={'games': new_game})
+        schebuler.add_job(announce, trigger="date",
+                          next_run_time=datetime.datetime.strptime( END_OF_REGISTRATION, '%d.%m.%Y' ),
+                          # next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=60),
+                          kwargs={'games': [new_game]})
         schebuler.start()
-        print("After scheduler")
 
         await bot.send_sticker(callback_query.from_user.id,
                                sticker='CAACAgIAAxkBAAEK9qZlev4Je4A1JHcJBja16ILaYfhR5gAC1QUAAj-VzAr0FV2u85b8KDME')
 
+
+async def announce(games):
+    for game in games:
+        gifters = await sync_to_async(perform_pairing)([game])
+        for pair in gifters:
+            await bot.send_message(pair.givers.id_user, pair.message)

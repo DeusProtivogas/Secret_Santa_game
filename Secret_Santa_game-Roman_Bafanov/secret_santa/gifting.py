@@ -1,16 +1,15 @@
 import random
+import asyncio
 from .models import Game, Patricipants, Givers
 from asgiref.sync import sync_to_async
 
+from secret_santa.bot_logic.loader import bot
 
-# @sync_to_async
+
 def get_participants(game):
-    # print("Funct started")
     players = []
     for player in Patricipants.objects.select_related('game').filter(game=game):
-        print({'id': player.id, 'name': player.name, 'game': player.game.name_of_game})
         players.append(player)
-    # print("Funct ended")
     return players
 
 def perform_pairing(games):
@@ -19,17 +18,21 @@ def perform_pairing(games):
         participants = get_participants(game)
 
         shift = random.randint(1, len(participants) - 1)
-        print("SHIFT: ", shift)
         pairs = {}
+        gifters_arr = []
         for count, player in enumerate(participants):
             pairs[player] = participants[(count + shift) % len(participants)]
+            message = f"Твой партнер - {pairs[player].name}, " \
+                      f"интересуется {pairs[player].interests}, " \
+                      f"хочет сказать тебе следующее\n{pairs[player].letter_to_santa}"
             gifters = Givers(
                 game=game,
                 givers=player,
-                recipient=participants[(count + shift) % len(participants)]
+                recipient=pairs[player],
+                message=message,
             )
-            print(gifters)
+            gifters_arr.append(gifters)
             gifters.save()
+        return gifters_arr
 
-        # for i in participants:
-        #     print(i)
+

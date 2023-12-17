@@ -22,7 +22,6 @@ GAME_ID = None
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     await set_commands(bot)
-    print("HERE: ", message.text)
     text = message.text.split()
     await bot.send_sticker(message.from_user.id,
                            sticker='CAACAgIAAxkBAAEK9qFlevsInA68q_W-0N39iF5-5CCrjwACeAEAAiI3jgQ6pl0vZ69f1TME')
@@ -136,10 +135,23 @@ async def player_letter(callback: types.CallbackQuery, state: FSMContext):
             break
         participant = Patricipants(game=game, id_user=PLAYER_ID,
                                    name=NAME, e_mail=PLAYER_E_MAIL,
-                                   interests=PLAYER_INTERESTS, letter_to_santa=PLAYER_LETTER, )
+                                   interests=PLAYER_INTERESTS, letter_to_santa=" ", )
         await sync_to_async(participant.save)()
 
         await callback.message.answer("Превосходно, ты в игре! "
                                       "\"Дата\" мы проведем жеребьевку и ты узнаешь имя "
                                       "и контакты своего тайного друга. "
                                       "Ему и нужно будет подарить подарок!")
+
+
+async def announce_gifter(player_id, recipient_id, name, interests, letter):
+    # message = f"Твой партнер - {pair}"
+    global PLAYER_ID
+    await bot.send_message(player_id, text=f"Твой партнер - {name}, "
+                                           f"интересуется {interests}, "
+                                           f"хочет сказать тебе следующее\n{letter}")
+
+
+def announce_pair(player_id, recipient_id, name, interests, letter):
+    # announcement = f"Твой партнер - {}, интересуется {}, хочет сказать тебе следующее"
+    announce_gifter(player_id, recipient_id, name, interests, letter)

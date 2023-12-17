@@ -81,11 +81,22 @@ class Givers(models.Model):
     givers = models.OneToOneField(
         Patricipants,
         on_delete=models.CASCADE,
+        related_name='givers',
         verbose_name='Кто дарит'
     )
-    recipient = models.TextField(
+    recipient = models.OneToOneField(
+        Patricipants,
+        on_delete=models.CASCADE,
+        related_name='recipient',
         verbose_name='Кому дарит'
     )
+    message = models.TextField(
+        verbose_name='Сообщение',
+        max_length=200
+    )
+    # recipient = models.TextField(
+    #     verbose_name='Кому дарит'
+    # )
 
     def __str__(self):
         return f'{self.game} {self.givers} - {self.recipient}'
